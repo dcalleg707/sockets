@@ -34,7 +34,11 @@ while True:
         # send a thank you message to the client. encoding to send byte type.
         conn.send('Thank you for connecting'.encode())
         cons.append(conn)
-        
+        # Close the connection with the client
+    except:
+        pass
+    
+    try:
         for con in cons:
             print(pickle.loads(con.recv(1024)))
         # Close the connection with the client

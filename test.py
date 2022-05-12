@@ -1,36 +1,20 @@
-import subprocess
-import os, signal
-import time
-import atexit
-import signal
-import sys
+import socket, pickle			
 
-def handler(signum, frame):
-    # do the cleaning if necessary
+# Define the port on which you want to connect
+port = 12345			
 
-    # log your data here
-    with open('log.log', 'a') as fo:
-        fo.write('Force quit on %s.\n' % signum)
+# Create a socket object
+s2 = socket.socket()	
 
-    # force quit
-    sys.exit(1)  # only 0 means "ok"
-    
+# Define the port on which you want to connect			
 
-signal.signal(signal.SIGINT, handler)
-signal.signal(signal.SIGTERM, handler)
+# connect to the server on local computer
+s2.connect(('127.0.0.1', port))
 
-try:    
-    p = subprocess.Popen("""notepad.exe""")
-    # Some actions
-    time.sleep(5)
-finally:
-    exit_handler()
-
-def exit_handler():
-    print(p.pid)
-    os.kill(p.pid, signal.SIGTERM) 
-
-atexit.register(exit_handler)
-
+# receive data from the server and decoding to get the string.
+print (s2.recv(1024).decode())
+s2.send(pickle.dumps({'b': 'b' }))
+s2.close()
+	
 
 
