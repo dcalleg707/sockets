@@ -1,19 +1,42 @@
-# Import socket module
-import socket, pickle			
+import socket
+import sys
 
-# Create a socket object
-s = socket.socket()	
+messages = [
+    'This is the message. ',
+    'It will be sent ',
+    'in parts.',
+]
+server_address = ('localhost', 10000)
 
-# Define the port on which you want to connect
-port = 12345			
+# Create a TCP/IP socket
+socks = [
+    socket.socket(socket.AF_INET, socket.SOCK_STREAM),
+    socket.socket(socket.AF_INET, socket.SOCK_STREAM),
+]
 
-# connect to the server on local computer
-s.connect(('127.0.0.1', port))
+# Connect the socket to the port where the server is listening
+print('connecting to {} port {}'.format(*server_address),
+      file=sys.stderr)
+for s in socks:
+    s.connect(server_address)
 
-# receive data from the server and decoding to get the string.
-print (s.recv(1024).decode())
-s.send(pickle.dumps({'a': 'a' }))
-# close the connection
-s.close()	
-# Create a socket object
-	
+for message in messages:
+    outgoing_data = message.encode()
+
+    # Send messages on both sockets
+    for s in socks:
+        print('{}: sending {!r}'.format(s.getsockname(),
+                                        outgoing_data),
+              file=sys.stderr)
+        s.send(outgoing_data)
+
+    # Read responses on both sockets
+    for s in socks:
+        data = s.recv(1024)
+        print('{}: received {!r}'.format(s.getsockname(),
+                                         data),
+              file=sys.stderr)
+        if not data:
+            print('closing socket', s.getsockname(),
+                  file=sys.stderr)
+            s.close()
