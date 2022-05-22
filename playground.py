@@ -1,42 +1,29 @@
+# Import socket module
 import socket
-import sys
 
-messages = [
-    'This is the message. ',
-    'It will be sent ',
-    'in parts.',
-]
-server_address = ('localhost', 10000)
+# local host IP '127.0.0.1'
+host = '127.0.0.1'
 
-# Create a TCP/IP socket
-socks = [
-    socket.socket(socket.AF_INET, socket.SOCK_STREAM),
-    socket.socket(socket.AF_INET, socket.SOCK_STREAM),
-]
+# Define the port on which you want to connect
+port = 10000
 
-# Connect the socket to the port where the server is listening
-print('connecting to {} port {}'.format(*server_address),
-      file=sys.stderr)
-for s in socks:
-    s.connect(server_address)
+s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
-for message in messages:
-    outgoing_data = message.encode()
+# connect to server on local computer
+s.connect((host,port))
 
-    # Send messages on both sockets
-    for s in socks:
-        print('{}: sending {!r}'.format(s.getsockname(),
-                                        outgoing_data),
-              file=sys.stderr)
-        s.send(outgoing_data)
+# message you send to server
+message = "shaurya says geeksforgeeks"
+while True:
 
-    # Read responses on both sockets
-    for s in socks:
-        data = s.recv(1024)
-        print('{}: received {!r}'.format(s.getsockname(),
-                                         data),
-              file=sys.stderr)
-        if not data:
-            print('closing socket', s.getsockname(),
-                  file=sys.stderr)
-            s.close()
+    # message received from server
+    s.send(message.encode('ascii'))
+    data = s.recv(1024)
+
+    # print the received message
+    # here it would be a reverse of sent message
+    print('Received from the server :',str(data.decode('ascii')))
+
+    # ask the client whether he wants to continue
+# close the connection
+s.close()
