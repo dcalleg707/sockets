@@ -1,5 +1,6 @@
 import socket
 import threading
+import pickle
 
 class ThreadedServer(object):
     def __init__(self, host, port):
@@ -33,6 +34,10 @@ class ThreadedServer(object):
             except:
                 client.close()
                 return False
+    def manageMessage(self, message):
+        message = pickle.loads(message)
+        print(message)
+        
 
 if __name__ == "__main__":
     while True:
