@@ -6,16 +6,16 @@ ventana = tkinter.Tk()
 ventana.geometry("1280x720")
 
 
-bg = tkinter.PhotoImage(file="sockets/img/Wallpaper.png")
+bg = tkinter.PhotoImage(file="img/Wallpaper.png")
 fondo = tkinter.Label(ventana,image=bg)
 fondo.place(x=0,y=0)
 
 
 
-carpetaCreada = tkinter.PhotoImage(file="sockets/img/carpetaCreada.png")
-carpetaImg = tkinter.PhotoImage(file="sockets/img/carpeta.png")
-blocImg = tkinter.PhotoImage(file="sockets/img/bloc.png")
-apagarImg = tkinter.PhotoImage(file="sockets/img/shutdown.png")
+carpetaCreada = tkinter.PhotoImage(file="img/carpetaCreada.png")
+carpetaImg = tkinter.PhotoImage(file="img/carpeta.png")
+blocImg = tkinter.PhotoImage(file="img/bloc.png")
+apagarImg = tkinter.PhotoImage(file="img/shutdown.png")
 
 row = 3
 column = 0
