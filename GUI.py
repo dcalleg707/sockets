@@ -37,6 +37,7 @@ def crearCarpeta():
     nombreCarpeta.grid(row=0,column=4)
     botonCarpeta = tkinter.Button(ventana, text="Crear carpeta", command= lambda: crearIconoCarpeta(nombreCarpeta.get(),botonCarpeta))
     botonCarpeta.grid(row=1, column=4)
+
     
 
 def crearIconoCarpeta(nombre,botonCarpeta):
@@ -44,13 +45,21 @@ def crearIconoCarpeta(nombre,botonCarpeta):
     nombreCarpeta.grid_remove()
     global row, column
     print(nombre)
-    carpetaNueva = tkinter.Button(ventana, image=carpetaCreada, text=nombre,command=borrarCarpeta, compound="top")
-    carpetaNueva.grid(row=row,column=column,padx=10,pady=20)
-    row = row + 1
-    if row == 7:
-        row = 0
-        column = column + 1
-    print(row)
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'createFolder', 'name': nombre}))
+    response = pickle.loads(kernelSocket.recv(1024))
+    kernelSocket.close()
+    if(response['status'] == 'success'):
+        carpetaNueva = tkinter.Button(ventana, image=carpetaCreada, text=nombre,command=borrarCarpeta, compound="top")
+        carpetaNueva.grid(row=row,column=column,padx=10,pady=20)
+        row = row + 1
+        if row == 7:
+            row = 0
+            column = column + 1
+        print(row)
+    else:
+        print('error')
 
 def borrarCarpeta():
     global row, column
@@ -59,10 +68,8 @@ def borrarCarpeta():
         row-=1
         l.grid_remove()
         
-
 def cerrar():
     ventana.destroy()
-
 
 boton1 = tkinter.Button(ventana, image=carpetaImg, text="Crear carpeta", command= crearCarpeta)
 boton2 = tkinter.Button(ventana, image=blocImg, text="Abrir bloc")

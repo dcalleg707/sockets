@@ -78,6 +78,8 @@ def handleMessage(s, message):
     elif message['type'] == 'kill':
         os.kill(message['pid'], 9)
         s.send(pickle.dumps({'type': 'kill', 'status': 'success'}))
+    elif message['type'] == 'createFolder':
+        s.send(pickle.dumps({'type': 'createFolder', 'status': 'success'}))
     elif message['type'] == 'close':
         appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         appSocket.connect(('localhost', 10001))
