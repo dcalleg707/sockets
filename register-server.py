@@ -10,6 +10,7 @@ import sys
 # Create a TCP/IP socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
+processes = {}
 
 # Bind the socket to the port
 server_address = ('localhost', 10002)
@@ -18,8 +19,19 @@ print('starting up on {} port {}'.format(*server_address),
 server.bind(server_address)
 
 def handleMessage(s, message):
-        message = pickle.loads(message)
-        print(message)
+    message = pickle.loads(message)
+    print(message)
+    if message['type'] == 'createFolder':
+        try:
+            os.mkdir('./folders' + '/' + message['name'])
+            s.send(pickle.dumps({'type': 'createFolder', 'status': 'success'}))
+        except FileExistsError:
+            s.send(pickle.dumps({'type': 'createFolder', 'status': 'failure'}))
+    elif message['type'] == 'check':
+        s.send(pickle.dumps({'type': 'check', 'status': 'online'}))
+    elif message['type'] == 'close':
+        sys.exit(9)
+        os._exit(9)
 
 # Listen for incoming connections
 server.listen(5)

@@ -42,7 +42,7 @@ def checkAppStatus():
         time.sleep(5)
 
 def storeMessage(message):
-    message = pickle.dumps(message)
+    message = pickle.dumps({'type': 'store', 'message': message})
     storeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     storeSocket.connect(('localhost', 10002))
     storeSocket.send(message)
@@ -58,6 +58,17 @@ def sendToApp(message):
     storeMessage(response)
     print(response)
     return response
+
+def sendToRegister(message):
+    registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    registerSocket.connect(('localhost', 10002))
+    registerSocket.send(pickle.dumps(message))
+    response = registerSocket.recv(1024)
+    registerSocket.close()
+    response = pickle.loads(response)
+    print(response)
+    return response
+
 
 
 def handleMessage(s, message):
@@ -79,7 +90,9 @@ def handleMessage(s, message):
         os.kill(message['pid'], 9)
         s.send(pickle.dumps({'type': 'kill', 'status': 'success'}))
     elif message['type'] == 'createFolder':
-        s.send(pickle.dumps({'type': 'createFolder', 'status': 'success'}))
+        appResponse = sendToRegister(message)
+        print(appResponse)
+        s.send(pickle.dumps(appResponse))
     elif message['type'] == 'close':
         appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         appSocket.connect(('localhost', 10001))
