@@ -73,7 +73,6 @@ def sendToRegister(message):
 def handleMessage(s, message):
     global processes
     message = pickle.loads(message)
-    storeMessage(message)
     print(message)
     if message['type'] == 'exec':
         appResponse = sendToApp(message)
@@ -97,6 +96,10 @@ def handleMessage(s, message):
         appResponse = sendToRegister(message)
         print(appResponse)
         s.send(pickle.dumps(appResponse))
+    elif message['type'] == 'check':
+        answer = {'type': 'check', 'src': 'KRL', 'dst': 'APP', 'status': 'online'}
+        storeMessage(answer)
+        s.send(pickle.dumps(pickle.dumps(answer)))
     elif message['type'] == 'stop':
         appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         appSocket.connect(('localhost', 10001))
