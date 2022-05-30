@@ -162,9 +162,11 @@ server.listen(5)
 inputs = [server]
 outputs = []
 message_queues = {}
+"""
 appCheck = threading.Thread(target=checkAppStatus)
 appCheck.setDaemon(True)
 appCheck.start()
+"""
 
 while inputs:
     ventana.update_idletasks()

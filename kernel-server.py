@@ -8,9 +8,6 @@ import subprocess
 import sys
 import threading
 import time
-
-subprocess.Popen('cmd /k python ' + os.path.dirname(os.path.abspath(__file__)) + '/GUI.py')
-
 # Create a TCP/IP socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
@@ -117,7 +114,6 @@ try:
     appVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     appVerification.connect(('localhost', 10001))
     appVerification.send(pickle.dumps({'type': 'check'}))
-    print('app is online')
     response = appVerification.recv(1024)
     if pickle.loads(response)['status'] == 'online':
         appStatus = True
@@ -164,6 +160,7 @@ except socket.error:
     os._exit(status=9)
 print('gui initialized')
 
+
 appCheck = threading.Thread(target=checkAppStatus)
 appCheck.setDaemon(True)
 appCheck.start()
@@ -172,11 +169,10 @@ while inputs:
 
     # Wait for at least one of the sockets to be
     # ready for processing
-    print('waiting for the next event', file=sys.stderr)
     readable, writable, exceptional = select.select(inputs,
                                                     outputs,
                                                     inputs,
-                                                    1)
+                                                    0)
       # Handle inputs
     for s in readable:
 
