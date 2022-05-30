@@ -14,6 +14,8 @@ server.setblocking(0)
 server_address = ('localhost', 10000)
 processes = {}
 appStatus = False
+fileManagerStatus = False
+guiStatus = False
 
 print('starting up on {} port {}'.format(*server_address))
 server.bind(server_address)
@@ -27,17 +29,46 @@ def checkAppStatus():
             appStatus = localAppStatus
             storeMessage({'type': 'appStatus', 'status': appStatus})
         try:
-            checkSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            checkSocket.connect(('localhost', 10001))
-            checkSocket.send(pickle.dumps({'type': 'check', 'src': 'KRL', 'dst': 'APP'}))
-            data = pickle.loads(checkSocket.recv(1024))
+            data = sendToApp({'type': 'check', 'src': 'KRL', 'dst': 'APP'})
             if data['status'] == 'online':
                 localAppStatus = True
-                print('app is online')
-            checkSocket.close()
         except socket.error:
             localAppStatus = False 
             print('app off')
+        time.sleep(5)
+
+def checkFileManagerStatus():
+    global fileManagerStatus
+    localfileManagerStatus = fileManagerStatus
+    while True:
+        if localfileManagerStatus != fileManagerStatus:
+            print(localfileManagerStatus)
+            fileManagerStatus = localfileManagerStatus
+            storeMessage({'type': 'fileManagerStatus', 'status': fileManagerStatus})
+        try:
+            data = sendToRegister({'type': 'check', 'src': 'KRL', 'dst': 'FMR'})
+            if data['status'] == 'online':
+                localfileManagerStatus = True
+        except socket.error:
+            localfileManagerStatus = False 
+            print('file manager off')
+        time.sleep(5)
+
+def checkGuiStatus():
+    global guiStatus
+    localGuiStatus = guiStatus
+    while True:
+        if localGuiStatus != guiStatus:
+            print(localGuiStatus)
+            guiStatus = localGuiStatus
+            storeMessage({'type': 'guiStatus', 'status': guiStatus})
+        try:
+            data = sendToGui({'type': 'check', 'src': 'KRL', 'dst': 'GUI'})
+            if data['status'] == 'online':
+                localGuiStatus = True
+        except socket.error:
+            localGuiStatus = False 
+            print('GUI off')
         time.sleep(5)
 
 def storeMessage(message):
@@ -48,6 +79,7 @@ def storeMessage(message):
     storeSocket.close()
 
 def sendToApp(message):
+    storeMessage(message)
     appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     appSocket.connect(('localhost', 10001))
     appSocket.send(pickle.dumps(message))
@@ -59,12 +91,26 @@ def sendToApp(message):
     return response
 
 def sendToRegister(message):
+    storeMessage(message)
     registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     registerSocket.connect(('localhost', 10002))
     registerSocket.send(pickle.dumps(message))
     response = registerSocket.recv(1024)
     registerSocket.close()
     response = pickle.loads(response)
+    storeMessage(response)
+    print(response)
+    return response
+
+def sendToGui(message):
+    storeMessage(message)
+    guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    guiSocket.connect(('localhost', 10003))
+    guiSocket.send(pickle.dumps(message))
+    response = guiSocket.recv(1024)
+    guiSocket.close()
+    response = pickle.loads(response)
+    storeMessage(response)
     print(response)
     return response
 
@@ -123,15 +169,11 @@ message_queues = {}
 
 print('Initializing app module')
 subprocess.Popen('cmd /k ' + os.path.dirname(os.path.abspath(__file__)) + '/app-server.py')
-time.sleep(3)
+time.sleep(1)
 try:
-    appVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    appVerification.connect(('localhost', 10001))
-    appVerification.send(pickle.dumps({'type': 'check', 'src': 'KRL', 'dst': 'APP'}))
-    response = appVerification.recv(1024)
-    if pickle.loads(response)['status'] == 'online':
+    response = sendToApp(message = {'type': 'check', 'src': 'KRL', 'dst': 'APP'})
+    if response['status'] == 'online':
         appStatus = True
-    appVerification.close()
 except socket.error:
     print('app is not online')
     appStatus = False
@@ -140,37 +182,27 @@ print('app module initialized')
 
 print('Initializing file manager module')
 subprocess.Popen('cmd /k ' + os.path.dirname(os.path.abspath(__file__)) + '/register-server.py')
-time.sleep(3)
+time.sleep(1)
 try:
-    registerVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    registerVerification.connect(('localhost', 10002))
-    registerVerification.send(pickle.dumps({'type': 'check', 'src': 'KRL', 'dst': 'FMR'}))
-    response = registerVerification.recv(1024)
-    if pickle.loads(response)['status'] == 'online':
-        pass
-        #appStatus = True
-    registerVerification.close()
+    response = sendToRegister(message = {'type': 'check', 'src': 'KRL', 'dst': 'FMR'})
+    if response['status'] == 'online':
+        fileManagerStatus = True
 except socket.error:
     print('file manager is not online')
-    appStatus = False
+    fileManagerStatus = False
     os._exit(status=9)
 print('file manager initialized')
 
 print('Initializing GUI module')
 subprocess.Popen('cmd /k ' + os.path.dirname(os.path.abspath(__file__)) + '/GUI.py')
-time.sleep(3)
+time.sleep(1)
 try:
-    guiVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    guiVerification.connect(('localhost', 10003))
-    guiVerification.send(pickle.dumps({'type': 'check', 'src': 'KRL', 'dest': 'GUI'}))
-    response = guiVerification.recv(1024)
-    if pickle.loads(response)['status'] == 'online':
-        pass
-        #appStatus = True
-    guiVerification.close()
+    response = sendToGui(message = {'type': 'check', 'src': 'KRL', 'dst': 'GUI'})
+    if response['status'] == 'online':
+        guiStatus = True
 except socket.error:
     print('gui is not online')
-    appStatus = False
+    guiStatus = False
     os._exit(status=9)
 print('gui initialized')
 
