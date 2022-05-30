@@ -9,6 +9,8 @@ import sys
 import threading
 import time
 
+subprocess.Popen('cmd /k python ' + os.path.dirname(os.path.abspath(__file__)) + '/GUI.py')
+
 # Create a TCP/IP socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
@@ -106,6 +108,62 @@ server.listen(5)
 inputs = [server]
 outputs = []
 message_queues = {}
+
+
+print('Initializing app module')
+subprocess.Popen('cmd /k ' + os.path.dirname(os.path.abspath(__file__)) + '/app-server.py')
+time.sleep(3)
+try:
+    appVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    appVerification.connect(('localhost', 10001))
+    appVerification.send(pickle.dumps({'type': 'check'}))
+    print('app is online')
+    response = appVerification.recv(1024)
+    if pickle.loads(response)['status'] == 'online':
+        appStatus = True
+    appVerification.close()
+except socket.error:
+    print('app is not online')
+    appStatus = False
+    os._exit(status=9)
+print('app module initialized')
+
+print('Initializing file manager module')
+subprocess.Popen('cmd /k ' + os.path.dirname(os.path.abspath(__file__)) + '/register-server.py')
+time.sleep(3)
+try:
+    registerVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    registerVerification.connect(('localhost', 10002))
+    registerVerification.send(pickle.dumps({'type': 'check'}))
+    response = registerVerification.recv(1024)
+    if pickle.loads(response)['status'] == 'online':
+        pass
+        #appStatus = True
+    registerVerification.close()
+except socket.error:
+    print('file manager is not online')
+    appStatus = False
+    os._exit(status=9)
+print('file manager initialized')
+
+print('Initializing GUI module')
+subprocess.Popen('cmd /k ' + os.path.dirname(os.path.abspath(__file__)) + '/GUI.py')
+time.sleep(3)
+try:
+    guiVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    guiVerification.connect(('localhost', 10003))
+    guiVerification.send(pickle.dumps({'type': 'check'}))
+    response = guiVerification.recv(1024)
+    if pickle.loads(response)['status'] == 'online':
+        pass
+        #appStatus = True
+    guiVerification.close()
+except socket.error:
+    print('gui is not online')
+    appStatus = False
+    os._exit(status=9)
+print('gui initialized')
+
 appCheck = threading.Thread(target=checkAppStatus)
 appCheck.setDaemon(True)
 appCheck.start()

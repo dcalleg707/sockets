@@ -31,8 +31,6 @@ row = 3
 column = 0
 nombreCarpeta = tkinter.Entry(ventana)
 
-print('a')
-
 def crearCarpeta():
     nombreCarpeta.grid(row=0,column=4)
     botonCarpeta = tkinter.Button(ventana, text="Crear carpeta", command= lambda: crearIconoCarpeta(nombreCarpeta.get(),botonCarpeta))
@@ -79,18 +77,7 @@ boton1.grid(row=0,column=0,padx=10,pady=20)
 boton2.grid(row=1,column=0,padx=10,pady=20)
 boton3.grid(row=2,column=0,padx=10,pady=20)
 
-ventana.mainloop()
-
-
 # Create a TCP/IP socket
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setblocking(0)
-server_address = ('localhost', 10000)
-processes = {}
-appStatus = False
-
-print('starting up on {} port {}'.format(*server_address))
-server.bind(server_address)
 
 def checkAppStatus():
     global appStatus
@@ -151,12 +138,23 @@ def handleMessage(s, message):
     elif message['type'] == 'kill':
         os.kill(message['pid'], 9)
         s.send(pickle.dumps({'type': 'kill', 'status': 'success'}))
+    elif message['type'] == 'check':
+        s.send(pickle.dumps({'type': 'check', 'status': 'online'}))
     elif message['type'] == 'close':
         appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         appSocket.connect(('localhost', 10001))
         appSocket.send(pickle.dumps({'type': 'close', 'app': 'notepad'}))
         sys.exit(9)
         os._exit(9)
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setblocking(0)
+server_address = ('localhost', 10000)
+processes = {}
+appStatus = False
+
+print('starting up on {} port {}'.format(*server_address))
+server.bind(server_address)
 
 # Listen for incoming connections
 server.listen(5)
@@ -174,11 +172,10 @@ while inputs:
 
     # Wait for at least one of the sockets to be
     # ready for processing
-    print('waiting for the next event', file=sys.stderr)
     readable, writable, exceptional = select.select(inputs,
                                                     outputs,
                                                     inputs,
-                                                    1)
+                                                    0)
       # Handle inputs
     for s in readable:
 
