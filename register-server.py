@@ -23,7 +23,7 @@ def handleMessage(s, message):
     print(message)
     if message['type'] == 'createFolder':
         try:
-            os.mkdir('./folders' + '/' + message['name'])
+            os.mkdir(os.path.dirname(os.path.abspath(__file__)) +'/folders/' + message['name'])
             s.send(pickle.dumps({'type': 'createFolder', 'status': 'success'}))
         except FileExistsError:
             s.send(pickle.dumps({'type': 'createFolder', 'status': 'failure'}))
