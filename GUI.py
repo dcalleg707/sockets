@@ -94,34 +94,34 @@ boton3.grid(row=2,column=0,padx=10,pady=20)
 
 # Create a TCP/IP socket
 
-def checkAppStatus():
-    global appStatus
-    localAppStatus = appStatus
+def sendToKernel(message):
+    appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    appSocket.connect(('localhost', 10000))
+    appSocket.send(pickle.dumps(message))
+    response = appSocket.recv(1024)
+    appSocket.close()
+    response = pickle.loads(response)
+    print(response)
+    return response
+
+def checkKernelStatus():
+    global kernelStatus
+    localKernelStatus = kernelStatus
     while True:
-        if localAppStatus != appStatus:
-            print(localAppStatus)
-            appStatus = localAppStatus
-            storeMessage({'type': 'appStatus', 'status': appStatus})
+        if localKernelStatus != kernelStatus:
+            print(localKernelStatus)
+            kernelStatus = localKernelStatus
         try:
-            checkSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            checkSocket.connect(('localhost', 10001))
-            checkSocket.send(pickle.dumps({'type': 'check'}))
-            data = pickle.loads(checkSocket.recv(1024))
+            data = sendToKernel({'type': 'check', 'src': 'APP', 'dst': 'KRL'})
             if data['status'] == 'online':
-                localAppStatus = True
-                print('app is online')
-            checkSocket.close()
+                localKernelStatus = True
         except socket.error:
-            localAppStatus = False 
-            print('app off')
+            localKernelStatus = False 
+            print('kernel off')
+            os._exit(status=9)
         time.sleep(5)
 
-def storeMessage(message):
-    message = pickle.dumps(message)
-    storeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    storeSocket.connect(('localhost', 10002))
-    storeSocket.send(message)
-    storeSocket.close()
+kernelStatus = False
 
 def sendToApp(message):
     appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -130,7 +130,6 @@ def sendToApp(message):
     response = appSocket.recv(1024)
     appSocket.close()
     response = pickle.loads(response)
-    storeMessage(response)
     print(response)
     return response
 
@@ -138,7 +137,6 @@ def sendToApp(message):
 def handleMessage(s, message):
     global processes
     message = pickle.loads(message)
-    storeMessage(message)
     print(message)
     if message['type'] == 'exec':
         appResponse = sendToApp(message)
@@ -171,11 +169,6 @@ server.listen(5)
 inputs = [server]
 outputs = []
 message_queues = {}
-"""
-appCheck = threading.Thread(target=checkAppStatus)
-appCheck.setDaemon(True)
-appCheck.start()
-"""
 
 while inputs:
     ventana.update_idletasks()

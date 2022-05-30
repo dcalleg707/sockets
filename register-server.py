@@ -12,12 +12,40 @@ import sys
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
 processes = {}
+kernelStatus = False
 
 # Bind the socket to the port
 server_address = ('localhost', 10002)
 print('starting up on {} port {}'.format(*server_address),
       file=sys.stderr)
 server.bind(server_address)
+
+def sendToKernel(message):
+    appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    appSocket.connect(('localhost', 10000))
+    appSocket.send(pickle.dumps(message))
+    response = appSocket.recv(1024)
+    appSocket.close()
+    response = pickle.loads(response)
+    print(response)
+    return response
+
+def checkKernelStatus():
+    global kernelStatus
+    localKernelStatus = kernelStatus
+    while True:
+        if localKernelStatus != kernelStatus:
+            print(localKernelStatus)
+            kernelStatus = localKernelStatus
+        try:
+            data = sendToKernel({'type': 'check', 'src': 'APP', 'dst': 'KRL'})
+            if data['status'] == 'online':
+                localKernelStatus = True
+        except socket.error:
+            localKernelStatus = False 
+            print('kernel off')
+            os._exit(status=9)
+        time.sleep(5)
 
 def handleMessage(s, message):
     message = pickle.loads(message)
