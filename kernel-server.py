@@ -29,7 +29,7 @@ def checkAppStatus():
         try:
             checkSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             checkSocket.connect(('localhost', 10001))
-            checkSocket.send(pickle.dumps({'type': 'check'}))
+            checkSocket.send(pickle.dumps({'type': 'check', 'src': 'KRL', 'dst': 'APP'}))
             data = pickle.loads(checkSocket.recv(1024))
             if data['status'] == 'online':
                 localAppStatus = True
@@ -41,7 +41,7 @@ def checkAppStatus():
         time.sleep(5)
 
 def storeMessage(message):
-    message = pickle.dumps({'type': 'store', 'message': message})
+    message = pickle.dumps({'type': 'store', 'message': message, 'src': 'KRL', 'dst': 'FMR'})
     storeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     storeSocket.connect(('localhost', 10002))
     storeSocket.send(message)
@@ -86,16 +86,23 @@ def handleMessage(s, message):
         print(processes)
         s.send(pickle.dumps(appResponse))
     elif message['type'] == 'kill':
-        os.kill(message['pid'], 9)
-        s.send(pickle.dumps({'type': 'kill', 'status': 'success'}))
+        appResponse = sendToApp(message)
+        print(appResponse)
+        s.send(pickle.dumps(appResponse))
     elif message['type'] == 'createFolder':
         appResponse = sendToRegister(message)
         print(appResponse)
         s.send(pickle.dumps(appResponse))
-    elif message['type'] == 'close':
+    elif message['type'] == 'stop':
         appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         appSocket.connect(('localhost', 10001))
-        appSocket.send(pickle.dumps({'type': 'close', 'app': 'notepad'}))
+        appSocket.send(pickle.dumps({'type': 'stop', 'src': 'KRL', 'dst': 'APP'}))
+        registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        registerSocket.connect(('localhost', 10002))
+        registerSocket.send(pickle.dumps({'type': 'stop', 'src': 'KRL', 'dst': 'FMR'}))
+        guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        guiSocket.connect(('localhost', 10003))
+        guiSocket.send(pickle.dumps({'type': 'stop', 'src': 'KRL', 'dst': 'GUI'}))
         sys.exit(9)
         os._exit(9)
 
@@ -113,7 +120,7 @@ time.sleep(3)
 try:
     appVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     appVerification.connect(('localhost', 10001))
-    appVerification.send(pickle.dumps({'type': 'check'}))
+    appVerification.send(pickle.dumps({'type': 'check', 'src': 'KRL', 'dst': 'APP'}))
     response = appVerification.recv(1024)
     if pickle.loads(response)['status'] == 'online':
         appStatus = True
@@ -130,7 +137,7 @@ time.sleep(3)
 try:
     registerVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     registerVerification.connect(('localhost', 10002))
-    registerVerification.send(pickle.dumps({'type': 'check'}))
+    registerVerification.send(pickle.dumps({'type': 'check', 'src': 'KRL', 'dst': 'FMR'}))
     response = registerVerification.recv(1024)
     if pickle.loads(response)['status'] == 'online':
         pass
@@ -148,7 +155,7 @@ time.sleep(3)
 try:
     guiVerification = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     guiVerification.connect(('localhost', 10003))
-    guiVerification.send(pickle.dumps({'type': 'check'}))
+    guiVerification.send(pickle.dumps({'type': 'check', 'src': 'KRL', 'dest': 'GUI'}))
     response = guiVerification.recv(1024)
     if pickle.loads(response)['status'] == 'online':
         pass

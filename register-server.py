@@ -24,11 +24,11 @@ def handleMessage(s, message):
     if message['type'] == 'createFolder':
         try:
             os.mkdir(os.path.dirname(os.path.abspath(__file__)) +'/folders/' + message['name'])
-            s.send(pickle.dumps({'type': 'createFolder', 'status': 'success'}))
+            s.send(pickle.dumps({'type': 'createFolder', 'status': 'success', 'name': message['name'], 'src': 'FMR', 'dst': 'GUI'}))
         except FileExistsError:
-            s.send(pickle.dumps({'type': 'createFolder', 'status': 'failure'}))
+            s.send(pickle.dumps({'type': 'createFolder', 'status': 'failure', 'name': message['name'], 'src': 'FMR', 'dst': 'GUI'}))
     elif message['type'] == 'check':
-        s.send(pickle.dumps({'type': 'check', 'status': 'online'}))
+        s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'FMR', 'dst': 'KRL'}))
     elif message['type'] == 'close':
         sys.exit(9)
         os._exit(9)

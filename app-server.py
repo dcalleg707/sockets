@@ -28,12 +28,12 @@ def handleMessage(s, message):
                     processes[message['app']].append(subp.pid)
                 except KeyError:
                     processes[message['app']] = [subp.pid]
-                s.send(pickle.dumps({'type': 'exec', 'app': 'notepad', 'status': 'success', 'pid': subp.pid}))
+                s.send(pickle.dumps({'type': 'exec', 'app': 'notepad', 'status': 'success', 'pid': subp.pid, 'src': 'APP', 'dst': 'GUI'}))
         elif message['type'] == 'kill':
             os.kill(message['pid'], 9)
-            s.send(pickle.dumps({'type': 'kill', 'status': 'success'}))
+            s.send(pickle.dumps({'type': 'kill', 'status': 'success', 'src': 'GUI', 'dst': 'KRL'}))
         elif message['type'] == 'check':
-            s.send(pickle.dumps({'type': 'check', 'status': 'online'}))
+            s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': 'KRL'}))
         elif message['type'] == 'close':
             sys.exit(9)
             os._exit(9)

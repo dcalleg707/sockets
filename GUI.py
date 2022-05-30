@@ -45,7 +45,7 @@ def crearIconoCarpeta(nombre,botonCarpeta):
     print(nombre)
     kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     kernelSocket.connect(('localhost', 10000))
-    kernelSocket.send(pickle.dumps({'type': 'createFolder', 'name': nombre}))
+    kernelSocket.send(pickle.dumps({'type': 'createFolder', 'name': nombre, 'src': 'GUI', 'dst': 'FMR'}))
     response = pickle.loads(kernelSocket.recv(1024))
     kernelSocket.close()
     if(response['status'] == 'success'):
@@ -135,15 +135,9 @@ def handleMessage(s, message):
                 processes[appResponse['app']] = [appResponse['pid']]
         print(processes)
         s.send(pickle.dumps(appResponse))
-    elif message['type'] == 'kill':
-        os.kill(message['pid'], 9)
-        s.send(pickle.dumps({'type': 'kill', 'status': 'success'}))
     elif message['type'] == 'check':
-        s.send(pickle.dumps({'type': 'check', 'status': 'online'}))
+        s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': message['src']}))
     elif message['type'] == 'close':
-        appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        appSocket.connect(('localhost', 10001))
-        appSocket.send(pickle.dumps({'type': 'close', 'app': 'notepad'}))
         sys.exit(9)
         os._exit(9)
 
