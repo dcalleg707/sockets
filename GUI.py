@@ -16,16 +16,16 @@ ventana = tkinter.Tk()
 ventana.geometry("1280x720")
 
 
-bg = tkinter.PhotoImage(file="img/Wallpaper.png")
+bg = tkinter.PhotoImage(file="{}/img/Wallpaper.png".format(os.path.dirname(os.path.abspath(__file__))))
 fondo = tkinter.Label(ventana,image=bg)
 fondo.place(x=0,y=0)
 
 
 
-carpetaCreada = tkinter.PhotoImage(file="img/carpetaCreada.png")
-carpetaImg = tkinter.PhotoImage(file="img/carpeta.png")
-blocImg = tkinter.PhotoImage(file="img/bloc.png")
-apagarImg = tkinter.PhotoImage(file="img/shutdown.png")
+carpetaCreada = tkinter.PhotoImage(file="{}/img/carpetaCreada.png".format(os.path.dirname(os.path.abspath(__file__))))
+carpetaImg = tkinter.PhotoImage(file="{}/img/carpeta.png".format(os.path.dirname(os.path.abspath(__file__))))
+blocImg = tkinter.PhotoImage(file="{}/img/bloc.png".format(os.path.dirname(os.path.abspath(__file__))))
+apagarImg = tkinter.PhotoImage(file="{}/img/shutdown.png".format(os.path.dirname(os.path.abspath(__file__))))
 
 row = 3
 column = 0
@@ -149,7 +149,7 @@ def handleMessage(s, message):
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
-server_address = ('localhost', 10000)
+server_address = ('localhost', 10003)
 processes = {}
 appStatus = False
 
