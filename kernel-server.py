@@ -21,6 +21,7 @@ print('starting up on {} port {}'.format(*server_address))
 server.bind(server_address)
 
 def checkAppStatus():
+    time.sleep(10)
     global appStatus
     localAppStatus = appStatus
     while True:
@@ -35,7 +36,7 @@ def checkAppStatus():
         except socket.error:
             localAppStatus = False 
             print('app off')
-        time.sleep(5)
+        time.sleep(3)
 
 def checkFileManagerStatus():
     global fileManagerStatus
@@ -120,8 +121,8 @@ def sendToGui(message):
 
 def handleMessage(s, message):
     global processes
-    storeMessage(message)
     message = pickle.loads(message)
+    storeMessage(message)
     print(message)
     if message['type'] == 'exec':
         appResponse = sendToApp(message)

@@ -6,6 +6,8 @@ import pickle
 import os
 import subprocess
 import sys
+import threading
+import time
 
 # Create a TCP/IP socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -30,6 +32,7 @@ def sendToKernel(message):
     return response
 
 def checkKernelStatus():
+    time.sleep(10)
     global kernelStatus
     localKernelStatus = kernelStatus
     while True:
@@ -44,7 +47,7 @@ def checkKernelStatus():
             localKernelStatus = False 
             print('kernel off')
             os._exit(status=9)
-        time.sleep(5)
+        time.sleep(3)
 
 def handleMessage(s, message):
         message = pickle.loads(message)
@@ -72,6 +75,10 @@ server.listen(5)
 inputs = [server]
 outputs = []
 message_queues = {}
+
+kernelCheck = threading.Thread(target=checkKernelStatus)
+kernelCheck.setDaemon(True)
+kernelCheck.start()
 
 while inputs:
 
