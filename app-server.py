@@ -14,6 +14,7 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
 processes = {}
 kernelStatus = True
+die = False
 
 # Bind the socket to the port
 server_address = ('localhost', 10001)
@@ -22,18 +23,22 @@ print('starting up on {} port {}'.format(*server_address),
 server.bind(server_address)
 
 def sendToKernel(message):
-    appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    appSocket.connect(('localhost', 10000))
-    appSocket.send(pickle.dumps(message))
-    response = appSocket.recv(1024)
-    appSocket.close()
-    response = pickle.loads(response)
-    print(response)
-    return response
+    try:
+        appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        appSocket.connect(('localhost', 10000))
+        appSocket.send(pickle.dumps(message))
+        response = appSocket.recv(1024)
+        appSocket.close()
+        response = pickle.loads(response)
+        print(response)
+        return response
+    except:
+        print('error')
 
 def checkKernelStatus():
     time.sleep(10)
     global kernelStatus
+    global die
     localKernelStatus = kernelStatus
     while True:
         if localKernelStatus != kernelStatus:
@@ -43,10 +48,9 @@ def checkKernelStatus():
             data = sendToKernel({'type': 'check', 'src': 'APP', 'dst': 'KRL'})
             if data['status'] == 'online':
                 localKernelStatus = True
-        except socket.error:
+        except :
             localKernelStatus = False 
-            print('kernel off')
-            os._exit(status=9)
+            die = True
         time.sleep(1)
 
 def handleMessage(s, message):
@@ -59,12 +63,18 @@ def handleMessage(s, message):
                     processes[message['app']].append(subp.pid)
                 except KeyError:
                     processes[message['app']] = [subp.pid]
-                s.send(pickle.dumps({'type': 'exec', 'app': 'notepad', 'status': 'success', 'pid': subp.pid, 'src': 'APP', 'dst': 'GUI'}))
+                try: s.send(pickle.dumps({'type': 'exec', 'app': 'notepad', 'status': 'success', 'pid': subp.pid, 'src': 'APP', 'dst': 'GUI'}))
+                except socket.error:
+                    print('error')
         elif message['type'] == 'kill':
             os.kill(message['pid'], 9)
-            s.send(pickle.dumps({'type': 'kill', 'status': 'success', 'src': 'GUI', 'dst': 'KRL'}))
+            try: s.send(pickle.dumps({'type': 'kill', 'status': 'success', 'src': 'GUI', 'dst': 'KRL'}))
+            except socket.error:
+                print('error')
         elif message['type'] == 'check':
-            s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': 'KRL'}))
+            try: s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': 'KRL'}))
+            except socket.error:
+                print('error')
         elif message['type'] == 'close':
             sys.exit(9)
             os._exit(9)
@@ -81,7 +91,9 @@ kernelCheck.setDaemon(True)
 kernelCheck.start()
 
 while inputs:
-
+    if die:
+        sys.exit(9)
+        os._exit(9)
     # Wait for at least one of the sockets to be
     # ready for processing
     readable, writable, exceptional = select.select(inputs,

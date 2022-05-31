@@ -85,39 +85,52 @@ def storeMessage(message):
 
 
 def sendToApp(message):
-    appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    appSocket.connect(('localhost', 10001))
-    appSocket.send(pickle.dumps(message))
-    response = appSocket.recv(1024)
-    appSocket.close()
-    response = pickle.loads(response)
-    storeMessage(response)
-    print(response)
-    return response
+    try:
+        appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        appSocket.connect(('localhost', 10001))
+        appSocket.send(pickle.dumps(message))
+        response = appSocket.recv(1024)
+        appSocket.close()
+        response = pickle.loads(response)
+        storeMessage(response)
+        print(response)
+        return response
+    except socket.error:
+        print('app off')
+        appStatus = False
+        return {'status': 'offline'}
 
 def sendToRegister(message):
-    registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    registerSocket.connect(('localhost', 10002))
-    registerSocket.send(pickle.dumps(message))
-    response = registerSocket.recv(1024)
-    registerSocket.close()
-    response = pickle.loads(response)
-    storeMessage(response)
-    print(response)
-    return response
+    try:
+        registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        registerSocket.connect(('localhost', 10002))
+        registerSocket.send(pickle.dumps(message))
+        response = registerSocket.recv(1024)
+        registerSocket.close()
+        response = pickle.loads(response)
+        storeMessage(response)
+        print(response)
+        return response
+    except socket.error:
+        print('file manager off')
+        fileManagerStatus = False
+        return {'status': 'offline'}
 
 def sendToGui(message):
-    guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    guiSocket.connect(('localhost', 10003))
-    guiSocket.send(pickle.dumps(message))
-    response = guiSocket.recv(1024)
-    guiSocket.close()
-    response = pickle.loads(response)
-    storeMessage(response)
-    print(response)
-    return response
-
-
+    try:
+        guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        guiSocket.connect(('localhost', 10003))
+        guiSocket.send(pickle.dumps(message))
+        response = guiSocket.recv(1024)
+        guiSocket.close()
+        response = pickle.loads(response)
+        storeMessage(response)
+        print(response)
+        return response
+    except socket.error:
+        print('GUI off')
+        guiStatus = False
+        return {'status': 'offline'}
 
 def handleMessage(s, message):
     global processes
@@ -133,33 +146,50 @@ def handleMessage(s, message):
             except KeyError:
                 processes[appResponse['app']] = [appResponse['pid']]
         print(processes)
-        s.send(pickle.dumps(appResponse))
+        try: s.send(pickle.dumps(appResponse))
+        except socket.error: pass
     elif message['type'] == 'kill':
         appResponse = sendToApp(message)
         print(appResponse)
-        s.send(pickle.dumps(appResponse))
+        try: s.send(pickle.dumps(appResponse))
+        except socket.error: pass
     elif message['type'] == 'createFolder':
         appResponse = sendToRegister(message)
         print(appResponse)
-        s.send(pickle.dumps(appResponse))
+        try: s.send(pickle.dumps(appResponse))
+        except socket.error: pass
     elif message['type'] == 'deleteFolder':
         appResponse = sendToRegister(message)
         print(appResponse)
-        s.send(pickle.dumps(appResponse))
+        try: s.send(pickle.dumps(appResponse))
+        except socket.error: pass
     elif message['type'] == 'check':
         answer = {'type': 'check', 'src': 'KRL', 'dst': 'APP', 'status': 'online'}
         storeMessage(answer)
-        s.send(pickle.dumps(answer))
+        try: s.send(pickle.dumps(answer))
+        except socket.error: pass
     elif message['type'] == 'stop':
-        appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        appSocket.connect(('localhost', 10001))
-        appSocket.send(pickle.dumps({'type': 'stop', 'src': 'KRL', 'dst': 'APP'}))
-        registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        registerSocket.connect(('localhost', 10002))
-        registerSocket.send(pickle.dumps({'type': 'stop', 'src': 'KRL', 'dst': 'FMR'}))
-        guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        guiSocket.connect(('localhost', 10003))
-        guiSocket.send(pickle.dumps({'type': 'stop', 'src': 'KRL', 'dst': 'GUI'}))
+        try:
+            appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            appSocket.connect(('localhost', 10001))
+            appSocket.send(pickle.dumps({'type': 'stop', 'src': 'KRL', 'dst': 'APP'}))
+        except socket.error:
+            print('app off')
+            appStatus = False
+        try:
+            registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            registerSocket.connect(('localhost', 10002))
+            registerSocket.send(pickle.dumps({'type': 'stop', 'src': 'KRL', 'dst': 'FMR'}))
+        except socket.error:
+            print('file manager off')
+            fileManagerStatus = False
+        try:
+            guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            guiSocket.connect(('localhost', 10003))
+            guiSocket.send(pickle.dumps({'type': 'stop', 'src': 'KRL', 'dst': 'GUI'}))
+        except socket.error:
+            print('GUI off')
+            guiStatus = False
         sys.exit(9)
         os._exit(9)
 

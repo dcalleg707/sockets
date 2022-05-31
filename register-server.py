@@ -15,6 +15,7 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
 processes = {}
 kernelStatus = False
+die = False
 
 # Bind the socket to the port
 server_address = ('localhost', 10002)
@@ -23,17 +24,21 @@ print('starting up on {} port {}'.format(*server_address),
 server.bind(server_address)
 
 def sendToKernel(message):
-    appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    appSocket.connect(('localhost', 10000))
-    appSocket.send(pickle.dumps(message))
-    response = appSocket.recv(1024)
-    appSocket.close()
-    response = pickle.loads(response)
-    print(response)
-    return response
+    try:
+        appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        appSocket.connect(('localhost', 10000))
+        appSocket.send(pickle.dumps(message))
+        response = appSocket.recv(1024)
+        appSocket.close()
+        response = pickle.loads(response)
+        print(response)
+        return response
+    except:
+        print('error')
 
 def checkKernelStatus():
     global kernelStatus
+    global die
     time.sleep(10)
     localKernelStatus = kernelStatus
     while True:
@@ -44,10 +49,10 @@ def checkKernelStatus():
             data = sendToKernel({'type': 'check', 'src': 'APP', 'dst': 'KRL'})
             if data['status'] == 'online':
                 localKernelStatus = True
-        except socket.error:
+        except:
             localKernelStatus = False 
             print('kernel off')
-            os._exit(status=9)
+            die = True
         time.sleep(1)
 
 def handleMessage(s, message):
@@ -60,28 +65,35 @@ def handleMessage(s, message):
         except FileExistsError:
             s.send(pickle.dumps({'type': 'createFolder', 'status': 'failure', 'name': message['name'], 'src': 'FMR', 'dst': 'GUI'}))
     elif message['type'] == 'check':
-        s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'FMR', 'dst': 'KRL'}))
+        try: s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'FMR', 'dst': 'KRL'}))
+        except socket.error:
+            sys.exit(9)
+            os._exit(9)
     elif message['type'] == 'close':
         sys.exit(9)
         os._exit(9)
     elif message['type'] == 'store':
-        strm = str(message)
-        jsonprueba = json.dumps(strm)
-        entry = json.loads(jsonprueba)
+        try:
+            strm = str(message)
+            jsonprueba = json.dumps(strm)
+            entry = json.loads(jsonprueba)
 
-        if not os.path.exists('logs.txt'):
-            f = open('logs.txt','x')
-            f.write('[]')
+            if not os.path.exists('logs.txt'):
+                f = open('logs.txt','x')
+                f.write('[]')
+                f.close()
+            
+            f = open('logs.txt','r')
+            data = json.load(f)
+            data.append(entry)
+            f = open('logs.txt','w')
+            json.dump(data,f)
             f.close()
-        
-        f = open('logs.txt','r')
-        data = json.load(f)
-        data.append(entry)
-        f = open('logs.txt','w')
-        json.dump(data,f)
-        f.close()
-        
-        s.send(pickle.dumps({'type': 'store', 'status': 'success', 'src': 'FMR', 'dst': 'GUI'}))
+            
+            s.send(pickle.dumps({'type': 'store', 'status': 'success', 'src': 'FMR', 'dst': 'GUI'}))
+        except socket.error:
+            print('error')
+            
 
     elif message['type'] == 'deleteFolder':
         try:
@@ -104,6 +116,9 @@ kernelCheck.start()
 
 while inputs:
 
+    if die:
+        sys.exit(9)
+        os._exit(9)
     # Wait for at least one of the sockets to be
     # ready for processing
     readable, writable, exceptional = select.select(inputs,
