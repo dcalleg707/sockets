@@ -49,7 +49,7 @@ def crearIconoCarpeta(nombre,botonCarpeta):
     response = pickle.loads(kernelSocket.recv(1024))
     kernelSocket.close()
     if(response['status'] == 'success'):
-        carpetaNueva = tkinter.Button(ventana, image=carpetaCreada, text=nombre,command=borrarCarpeta, compound="top")
+        carpetaNueva = tkinter.Button(ventana, image=carpetaCreada, text=nombre, command=lambda:borrarCarpeta(carpetaNueva,nombre), compound="top")
         carpetaNueva.grid(row=row,column=column,padx=10,pady=20)
         row = row + 1
         if row == 7:
@@ -59,13 +59,28 @@ def crearIconoCarpeta(nombre,botonCarpeta):
     else:
         print('error')
 
-def borrarCarpeta():
-    global row, column
-    list = ventana.grid_slaves(row=row-1,column=column)
-    for l in list:
-        row-=1
-        l.grid_remove()
-        
+def borrarCarpeta(carpetaNueva,nombre):
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'deleteFolder', 'name': nombre, 'src': 'GUI', 'dst': 'FMR'}))
+    response = pickle.loads(kernelSocket.recv(1024))
+    kernelSocket.close()
+    global row,column
+    if(response['status']=='success'):
+        carpetaNueva.destroy()
+        if row > 0:
+            row-=1
+        elif row==0 and column==1:
+            row = 6
+            column = 0
+        elif row==0 and column>0:
+            row = 7
+            column-=1
+        print(row,column)
+    else:
+        print("error")
+
+
 def cerrar():
     ventana.destroy()
 
@@ -79,34 +94,34 @@ boton3.grid(row=2,column=0,padx=10,pady=20)
 
 # Create a TCP/IP socket
 
-def sendToKernel(message):
-    appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    appSocket.connect(('localhost', 10000))
-    appSocket.send(pickle.dumps(message))
-    response = appSocket.recv(1024)
-    appSocket.close()
-    response = pickle.loads(response)
-    print(response)
-    return response
-
-def checkKernelStatus():
-    global kernelStatus
-    localKernelStatus = kernelStatus
+def checkAppStatus():
+    global appStatus
+    localAppStatus = appStatus
     while True:
-        if localKernelStatus != kernelStatus:
-            print(localKernelStatus)
-            kernelStatus = localKernelStatus
+        if localAppStatus != appStatus:
+            print(localAppStatus)
+            appStatus = localAppStatus
+            storeMessage({'type': 'appStatus', 'status': appStatus})
         try:
-            data = sendToKernel({'type': 'check', 'src': 'APP', 'dst': 'KRL'})
+            checkSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            checkSocket.connect(('localhost', 10001))
+            checkSocket.send(pickle.dumps({'type': 'check'}))
+            data = pickle.loads(checkSocket.recv(1024))
             if data['status'] == 'online':
-                localKernelStatus = True
+                localAppStatus = True
+                print('app is online')
+            checkSocket.close()
         except socket.error:
-            localKernelStatus = False 
-            print('kernel off')
-            os._exit(status=9)
+            localAppStatus = False 
+            print('app off')
         time.sleep(5)
 
-kernelStatus = False
+def storeMessage(message):
+    message = pickle.dumps(message)
+    storeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    storeSocket.connect(('localhost', 10002))
+    storeSocket.send(message)
+    storeSocket.close()
 
 def sendToApp(message):
     appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -115,6 +130,7 @@ def sendToApp(message):
     response = appSocket.recv(1024)
     appSocket.close()
     response = pickle.loads(response)
+    storeMessage(response)
     print(response)
     return response
 
@@ -122,6 +138,7 @@ def sendToApp(message):
 def handleMessage(s, message):
     global processes
     message = pickle.loads(message)
+    storeMessage(message)
     print(message)
     if message['type'] == 'exec':
         appResponse = sendToApp(message)
@@ -154,6 +171,11 @@ server.listen(5)
 inputs = [server]
 outputs = []
 message_queues = {}
+"""
+appCheck = threading.Thread(target=checkAppStatus)
+appCheck.setDaemon(True)
+appCheck.start()
+"""
 
 while inputs:
     ventana.update_idletasks()

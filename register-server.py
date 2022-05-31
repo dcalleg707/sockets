@@ -4,6 +4,7 @@ import sys
 import queue
 import pickle
 import os
+import json
 import subprocess
 import sys
 
@@ -11,40 +12,12 @@ import sys
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
 processes = {}
-kernelStatus = False
 
 # Bind the socket to the port
 server_address = ('localhost', 10002)
 print('starting up on {} port {}'.format(*server_address),
       file=sys.stderr)
 server.bind(server_address)
-
-def sendToKernel(message):
-    appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    appSocket.connect(('localhost', 10000))
-    appSocket.send(pickle.dumps(message))
-    response = appSocket.recv(1024)
-    appSocket.close()
-    response = pickle.loads(response)
-    print(response)
-    return response
-
-def checkKernelStatus():
-    global kernelStatus
-    localKernelStatus = kernelStatus
-    while True:
-        if localKernelStatus != kernelStatus:
-            print(localKernelStatus)
-            kernelStatus = localKernelStatus
-        try:
-            data = sendToKernel({'type': 'check', 'src': 'APP', 'dst': 'KRL'})
-            if data['status'] == 'online':
-                localKernelStatus = True
-        except socket.error:
-            localKernelStatus = False 
-            print('kernel off')
-            os._exit(status=9)
-        time.sleep(5)
 
 def handleMessage(s, message):
     message = pickle.loads(message)
@@ -60,6 +33,32 @@ def handleMessage(s, message):
     elif message['type'] == 'close':
         sys.exit(9)
         os._exit(9)
+    elif message['type'] == 'store':
+        strm = str(message)
+        jsonprueba = json.dumps(strm)
+        entry = json.loads(jsonprueba)
+
+        if not os.path.exists('logs.txt'):
+            f = open('logs.txt','x')
+            f.write('[]')
+            f.close()
+        
+        f = open('logs.txt','r')
+        data = json.load(f)
+        data.append(entry)
+        f = open('logs.txt','w')
+        json.dump(data,f)
+        f.close()
+        
+        s.send(pickle.dumps({'type': 'store', 'status': 'success', 'src': 'FMR', 'dst': 'GUI'}))
+
+    elif message['type'] == 'deleteFolder':
+        try:
+            os.rmdir(os.path.dirname(os.path.abspath(__file__))+"/folders/"+message['name'])
+            s.send(pickle.dumps({'type': 'deleteFolder', 'status': 'success', 'name': message['name'], 'src': 'FMR', 'dst': 'GUI'}))
+        except:
+            s.send(pickle.dumps({'type': 'deleteFolder', 'status': 'failure', 'name': message['name'], 'src': 'FMR', 'dst': 'GUI'}))
+        
 
 # Listen for incoming connections
 server.listen(5)
