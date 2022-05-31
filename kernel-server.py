@@ -72,14 +72,18 @@ def checkGuiStatus():
         time.sleep(5)
 
 def storeMessage(message):
-    message = pickle.dumps({'type': 'store', 'message': message, 'src': 'KRL', 'dst': 'FMR'})
-    storeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    storeSocket.connect(('localhost', 10002))
-    storeSocket.send(message)
-    storeSocket.close()
+    global fileManagerStatus
+    try:
+        message = pickle.dumps({'type': 'store', 'message': message, 'src': 'KRL', 'dst': 'FMR'})
+        storeSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        storeSocket.connect(('localhost', 10002))
+        storeSocket.send(message)
+        storeSocket.close()
+    except socket.error:
+        fileManagerStatus = False
+
 
 def sendToApp(message):
-    storeMessage(message)
     appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     appSocket.connect(('localhost', 10001))
     appSocket.send(pickle.dumps(message))
@@ -91,7 +95,6 @@ def sendToApp(message):
     return response
 
 def sendToRegister(message):
-    storeMessage(message)
     registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     registerSocket.connect(('localhost', 10002))
     registerSocket.send(pickle.dumps(message))
@@ -103,7 +106,6 @@ def sendToRegister(message):
     return response
 
 def sendToGui(message):
-    storeMessage(message)
     guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     guiSocket.connect(('localhost', 10003))
     guiSocket.send(pickle.dumps(message))
@@ -118,6 +120,7 @@ def sendToGui(message):
 
 def handleMessage(s, message):
     global processes
+    storeMessage(message)
     message = pickle.loads(message)
     print(message)
     if message['type'] == 'exec':
@@ -175,6 +178,7 @@ try:
     if response['status'] == 'online':
         appStatus = True
 except socket.error:
+    
     print('app is not online')
     appStatus = False
     os._exit(status=9)
