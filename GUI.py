@@ -106,6 +106,7 @@ def sendToKernel(message):
 
 def checkKernelStatus():
     global kernelStatus
+    time.sleep(10)
     localKernelStatus = kernelStatus
     while True:
         if localKernelStatus != kernelStatus:
@@ -119,7 +120,7 @@ def checkKernelStatus():
             localKernelStatus = False 
             print('kernel off')
             os._exit(status=9)
-        time.sleep(5)
+        time.sleep(1)
 
 kernelStatus = False
 
@@ -169,6 +170,10 @@ server.listen(5)
 inputs = [server]
 outputs = []
 message_queues = {}
+
+kernelCheck = threading.Thread(target=checkKernelStatus)
+kernelCheck.setDaemon(True)
+kernelCheck.start()
 
 while inputs:
     ventana.update_idletasks()

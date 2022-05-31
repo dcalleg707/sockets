@@ -47,7 +47,7 @@ def checkKernelStatus():
             localKernelStatus = False 
             print('kernel off')
             os._exit(status=9)
-        time.sleep(3)
+        time.sleep(1)
 
 def handleMessage(s, message):
         message = pickle.loads(message)
