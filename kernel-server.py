@@ -216,6 +216,14 @@ appCheck = threading.Thread(target=checkAppStatus)
 appCheck.setDaemon(True)
 appCheck.start()
 
+fileManagerCheck = threading.Thread(target=checkFileManagerStatus)
+fileManagerCheck.setDaemon(True)
+fileManagerCheck.start()
+
+guiCheck = threading.Thread(target=checkGuiStatus)
+guiCheck.setDaemon(True)
+guiCheck.start()
+
 while inputs:
 
     # Wait for at least one of the sockets to be
