@@ -8,17 +8,26 @@ import subprocess
 import sys
 import threading
 import time
+import signal
 # Create a TCP/IP socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
 server_address = ('localhost', 10000)
-processes = {}
+processes = []
 appStatus = False
 fileManagerStatus = False
 guiStatus = False
 
 print('starting up on {} port {}'.format(*server_address))
 server.bind(server_address)
+
+def killAllProcesses():
+    global processes
+    for process in processes:
+        try:
+            os.kill(process, signal.SIGTERM)
+        except:
+            pass
 
 def checkAppStatus():
     time.sleep(10)
@@ -33,8 +42,10 @@ def checkAppStatus():
             data = sendToApp({'type': 'check', 'src': 'KRL', 'dst': 'APP'})
             if data['status'] == 'online':
                 localAppStatus = True
+            else:
+                killAllProcesses()
+                localAppStatus = False
         except socket.error:
-            localAppStatus = False 
             print('app off')
         time.sleep(3)
 
@@ -83,17 +94,19 @@ def storeMessage(message):
     except socket.error:
         fileManagerStatus = False
 
-
 def sendToApp(message):
     try:
         appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         appSocket.connect(('localhost', 10001))
         appSocket.send(pickle.dumps(message))
         response = appSocket.recv(1024)
-        appSocket.close()
         response = pickle.loads(response)
+        if response['status'] == 'pending':
+            response = appSocket.recv(1024)
+            response = pickle.loads(response)
         storeMessage(response)
         print(response)
+        appSocket.close()
         return response
     except socket.error:
         print('app off')
@@ -106,8 +119,11 @@ def sendToRegister(message):
         registerSocket.connect(('localhost', 10002))
         registerSocket.send(pickle.dumps(message))
         response = registerSocket.recv(1024)
-        registerSocket.close()
         response = pickle.loads(response)
+        if response['status'] == 'pending':
+            response = registerSocket.recv(1024)
+            response = pickle.loads(response)
+        registerSocket.close()
         storeMessage(response)
         print(response)
         return response
@@ -136,15 +152,16 @@ def handleMessage(s, message):
     global processes
     message = pickle.loads(message)
     storeMessage(message)
-    print(message)
+    if message['type'] != 'check':
+        print(message)
     if message['type'] == 'exec':
         appResponse = sendToApp(message)
         print(appResponse)
         if appResponse['status'] == 'success':
             try:
-                processes[appResponse['app']].append(appResponse['pid'])
+                processes.append(appResponse['pid'])
             except KeyError:
-                processes[appResponse['app']] = [appResponse['pid']]
+                pass
         print(processes)
         try: s.send(pickle.dumps(appResponse))
         except socket.error: pass
@@ -277,13 +294,15 @@ while inputs:
             # we want to send
             message_queues[connection] = queue.Queue()
         else:
-            data = s.recv(1024)
-            if data:
-                # A readable client socket has data
-                message_queues[s].put(data)
-                # Add output channel for response
-                if s not in outputs:
-                    outputs.append(s)
+            try:
+                data = s.recv(1024)
+                if data:
+                    # A readable client socket has data
+                    message_queues[s].put(data)
+                    # Add output channel for response
+                    if s not in outputs:
+                        outputs.append(s)
+            except socket.error: pass
 
     for s in writable:
         try:

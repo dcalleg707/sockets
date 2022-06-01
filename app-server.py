@@ -8,11 +8,13 @@ import subprocess
 import sys
 import threading
 import time
+import signal
+import random
 
 # Create a TCP/IP socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(0)
-processes = {}
+processes = []
 kernelStatus = True
 die = False
 
@@ -54,30 +56,41 @@ def checkKernelStatus():
         time.sleep(1)
 
 def handleMessage(s, message):
-        message = pickle.loads(message)
-        print(message)
-        if message['type'] == 'exec':
-            if message['app'] == 'notepad':
-                subp = subprocess.Popen(['notepad.exe'])
-                try:
-                    processes[message['app']].append(subp.pid)
-                except KeyError:
-                    processes[message['app']] = [subp.pid]
-                try: s.send(pickle.dumps({'type': 'exec', 'app': 'notepad', 'status': 'success', 'pid': subp.pid, 'src': 'APP', 'dst': 'GUI'}))
-                except socket.error:
-                    print('error')
-        elif message['type'] == 'kill':
+    global processes
+    message = pickle.loads(message)
+    print(message)
+    if message['type'] != 'stop':
+        randomNumber = random.randint(1, 4)
+        if randomNumber == 4:
+            s.send(pickle.dumps({'type': 'check', 'status': 'error', 'src': 'APP', 'dst': 'KRL', 'error': 'error'}))
+            return
+        elif randomNumber > 1:
+            s.send(pickle.dumps({'type': 'check', 'status': 'pending' ,'src': 'APP', 'dst': 'KRL'}))
+            time.sleep(randomNumber)
+    if message['type'] == 'exec':
+        if message['app'] == 'notepad':
+            subp = subprocess.Popen(['notepad.exe'])
+            processes.append(subp.pid)
+            try: s.send(pickle.dumps({'type': 'exec', 'app': 'notepad', 'status': 'success', 'pid': subp.pid, 'src': 'APP', 'dst': 'GUI'}))
+            except socket.error:
+                print('error')
+    elif message['type'] == 'kill':
+        
+        
+        try: 
             os.kill(message['pid'], 9)
-            try: s.send(pickle.dumps({'type': 'kill', 'status': 'success', 'src': 'GUI', 'dst': 'KRL'}))
-            except socket.error:
-                print('error')
-        elif message['type'] == 'check':
-            try: s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': 'KRL'}))
-            except socket.error:
-                print('error')
-        elif message['type'] == 'close':
-            sys.exit(9)
-            os._exit(9)
+            s.send(pickle.dumps({'type': 'kill', 'status': 'success', 'src': 'GUI', 'dst': 'KRL'}))
+        except socket.error:
+            print('error')
+        except OSError:
+            s.send(pickle.dumps({'type': 'kill', 'status': 'success', 'src': 'GUI', 'dst': 'KRL'}))
+    elif message['type'] == 'check':
+        try: s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': 'KRL'}))
+        except socket.error:
+            print('error')
+    elif message['type'] == 'close':
+        sys.exit(9)
+        os._exit(9)
 
 # Listen for incoming connections
 server.listen(5)
