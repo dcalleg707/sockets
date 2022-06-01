@@ -24,6 +24,15 @@ print('starting up on {} port {}'.format(*server_address),
       file=sys.stderr)
 server.bind(server_address)
 
+def killAllProcesses():
+    global processes
+    for process in processes:
+        try:
+            os.kill(process, signal.SIGTERM)
+        except:
+            pass
+    processes = []
+
 def sendToKernel(message):
     try:
         appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -89,6 +98,7 @@ def handleMessage(s, message):
         except socket.error:
             print('error')
     elif message['type'] == 'close':
+        killAllProcesses()
         sys.exit(9)
         os._exit(9)
 
@@ -105,6 +115,7 @@ kernelCheck.start()
 
 while inputs:
     if die:
+        killAllProcesses()
         sys.exit(9)
         os._exit(9)
     # Wait for at least one of the sockets to be

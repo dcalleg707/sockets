@@ -17,6 +17,7 @@ processes = []
 appStatus = False
 fileManagerStatus = False
 guiStatus = False
+die = False
 
 print('starting up on {} port {}'.format(*server_address))
 server.bind(server_address)
@@ -28,6 +29,7 @@ def killAllProcesses():
             os.kill(process, signal.SIGTERM)
         except:
             pass
+    processes = []
 
 def checkAppStatus():
     time.sleep(10)
@@ -273,6 +275,9 @@ guiCheck.start()
 
 while inputs:
 
+    if die:
+        sys.exit(9)
+        os._exit(9)
     # Wait for at least one of the sockets to be
     # ready for processing
     readable, writable, exceptional = select.select(inputs,
