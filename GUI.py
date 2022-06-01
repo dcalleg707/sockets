@@ -30,6 +30,32 @@ apagarImg = tkinter.PhotoImage(file="{}/img/shutdown.png".format(os.path.dirname
 row = 3
 column = 0
 nombreCarpeta = tkinter.Entry(ventana)
+appAbierta = False
+pidApp = 0
+
+def cerrarApp(botonApp):
+    global appAbierta
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'kill', 'pid':pidApp, 'src': 'GUI', 'dst': 'APP'}))
+    response = pickle.loads(kernelSocket.recv(1024))
+    kernelSocket.close()
+    if response['status'] == 'success':
+        appAbierta=False
+        botonApp.destroy()
+
+def abrirBloc():
+    global appAbierta, pidApp
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'exec', 'app': 'notepad', 'src': 'GUI', 'dst': 'APP'}))
+    response = pickle.loads(kernelSocket.recv(1024))
+    kernelSocket.close()
+    if response['status'] == 'success':
+        pidApp = response['pid']
+        appAbierta = True
+        botonApp = tkinter.Button(ventana,text="Cerrar app", command=lambda:cerrarApp(botonApp))
+        botonApp.grid(row=2, column=4)
 
 def crearCarpeta():
     nombreCarpeta.grid(row=0,column=4)
@@ -90,7 +116,7 @@ def cerrar():
     ventana.destroy()
 
 boton1 = tkinter.Button(ventana, image=carpetaImg, text="Crear carpeta", command= crearCarpeta)
-boton2 = tkinter.Button(ventana, image=blocImg, text="Abrir bloc")
+boton2 = tkinter.Button(ventana, image=blocImg, text="Abrir bloc", command=abrirBloc)
 boton3 = tkinter.Button(ventana, image= apagarImg, text="Apagar",command=cerrar)
 
 boton1.grid(row=0,column=0,padx=10,pady=20)
