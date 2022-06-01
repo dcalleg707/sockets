@@ -28,13 +28,14 @@ blocImg = tkinter.PhotoImage(file="{}/img/bloc.png".format(os.path.dirname(os.pa
 apagarImg = tkinter.PhotoImage(file="{}/img/shutdown.png".format(os.path.dirname(os.path.abspath(__file__))))
 
 row = 3
+rowAux = 0
 column = 0
 nombreCarpeta = tkinter.Entry(ventana)
 appAbierta = False
 pidApp = 0
 
-def cerrarApp(botonApp):
-    global appAbierta
+def cerrarApp(botonApp,pidApp):
+    global appAbierta, row, column
     kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     kernelSocket.connect(('localhost', 10000))
     kernelSocket.send(pickle.dumps({'type': 'kill', 'pid':pidApp, 'src': 'GUI', 'dst': 'APP'}))
@@ -43,9 +44,18 @@ def cerrarApp(botonApp):
     if response['status'] == 'success':
         appAbierta=False
         botonApp.destroy()
+        if row > 0:
+            row-=1
+        elif row==0 and column==1:
+            row = 6
+            column = 0
+        elif row==0 and column>0:
+            row = 7
+            column-=1
 
 def abrirBloc():
-    global appAbierta, pidApp
+    global appAbierta, pidApp, rowAux
+    rowAux = row
     kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     kernelSocket.connect(('localhost', 10000))
     kernelSocket.send(pickle.dumps({'type': 'exec', 'app': 'notepad', 'src': 'GUI', 'dst': 'APP'}))
@@ -53,16 +63,22 @@ def abrirBloc():
     kernelSocket.close()
     if response['status'] == 'success':
         pidApp = response['pid']
-        appAbierta = True
-        botonApp = tkinter.Button(ventana,text="Cerrar app", command=lambda:cerrarApp(botonApp))
-        botonApp.grid(row=2, column=4)
+        crearIconoBloc(pidApp)
 
 def crearCarpeta():
     nombreCarpeta.grid(row=0,column=4)
     botonCarpeta = tkinter.Button(ventana, text="Crear carpeta", command= lambda: crearIconoCarpeta(nombreCarpeta.get(),botonCarpeta))
     botonCarpeta.grid(row=1, column=4)
 
-    
+def crearIconoBloc(pidApp):
+    global row,column
+    blocNuevo = tkinter.Button(ventana,text="Cerrar bloc de notas "+str(pidApp), command=lambda:cerrarApp(blocNuevo,pidApp))
+    blocNuevo.grid(row=row,column=column,padx=10,pady=10)
+    row = row+1
+    if row == 7:
+        row = 0
+        column = column + 1
+
 
 def crearIconoCarpeta(nombre,botonCarpeta):
     try:
