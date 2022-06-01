@@ -5,6 +5,8 @@ import queue
 import pickle
 import os
 import json
+from datetime import date
+from time import strftime
 import subprocess
 import sys
 import threading
@@ -74,7 +76,9 @@ def handleMessage(s, message):
         os._exit(9)
     elif message['type'] == 'store':
         try:
-            strm = str(message)
+            fecha = date.today()
+            message['message']['date'] = fecha.strftime("%m/%d/%Y")
+            strm = str(message['message'])
             jsonprueba = json.dumps(strm)
             entry = json.loads(jsonprueba)
 
@@ -87,7 +91,7 @@ def handleMessage(s, message):
             data = json.load(f)
             data.append(entry)
             f = open('logs.txt','w')
-            json.dump(data,f)
+            json.dump(data,f,indent=4)
             f.close()
             
             s.send(pickle.dumps({'type': 'store', 'status': 'success', 'src': 'FMR', 'dst': 'GUI'}))
