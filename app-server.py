@@ -59,7 +59,7 @@ def handleMessage(s, message):
     global processes
     message = pickle.loads(message)
     print(message)
-    if message['type'] != 'stop':
+    if message['type'] != 'stop' and message['type'] != 'check':
         randomNumber = random.randint(1, 4)
         if randomNumber == 4:
             s.send(pickle.dumps({'type': 'check', 'status': 'error', 'src': 'APP', 'dst': 'KRL', 'error': 'error'}))
