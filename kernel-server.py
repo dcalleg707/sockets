@@ -27,9 +27,11 @@ def killAllProcesses():
     for process in processes:
         try:
             os.kill(process, signal.SIGTERM)
+            #sendToGui({'type': 'kill', 'pid': process,'src': 'KRL', 'dst': 'GUI'})
         except:
             pass
     processes = []
+
 
 def checkAppStatus():
     time.sleep(10)
