@@ -5,7 +5,7 @@ import queue
 import pickle
 import os
 import json
-from datetime import date
+import datetime
 from time import strftime
 import subprocess
 import sys
@@ -79,8 +79,8 @@ def handleMessage(s, message):
         die = True
     elif message['type'] == 'store':
         try:
-            fecha = date.today()
-            message['message']['date'] = fecha.strftime("%m/%d/%Y")
+            fecha = datetime.datetime.now()
+            message['message']['date'] = fecha.strftime("%m/%d/%Y, %H:%M:%S")
             strm = str(message['message'])
             jsonprueba = json.dumps(strm)
             entry = json.loads(jsonprueba)
