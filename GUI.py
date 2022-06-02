@@ -151,8 +151,8 @@ boton4 = tkinter.Button(ventana, text="Ver logs",command=logsVentana)
 
 boton1.grid(row=0,column=0,padx=10,pady=20)
 boton2.grid(row=1,column=0,padx=10,pady=20)
-boton3.grid(row=2,column=0,padx=10,pady=20)
-boton4.grid(row=3,column=0,padx=10,pady=20)
+boton3.grid(row=3,column=0,padx=10,pady=20)
+boton4.grid(row=2,column=0,padx=10,pady=20)
 
 # Create a TCP/IP socket
 
