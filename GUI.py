@@ -27,7 +27,7 @@ carpetaImg = tkinter.PhotoImage(file="{}/img/carpeta.png".format(os.path.dirname
 blocImg = tkinter.PhotoImage(file="{}/img/bloc.png".format(os.path.dirname(os.path.abspath(__file__))))
 apagarImg = tkinter.PhotoImage(file="{}/img/shutdown.png".format(os.path.dirname(os.path.abspath(__file__))))
 
-row = 3
+row = 6
 rowAux = 0
 column = 0
 nombreCarpeta = tkinter.Entry(ventana)
@@ -128,16 +128,62 @@ def borrarCarpeta(carpetaNueva,nombre):
     except:
         print("error")
 
+def logsVentana():
+    ventana2=tkinter.Tk()
+    ventana2.geometry("800x800")
+    scrollbar = tkinter.Scrollbar(ventana2)
+    scrollbar.pack(side="right", fill="y")
+    listbox = tkinter.Listbox(ventana2,yscrollcommand=scrollbar.set)
+    f = open("logs.txt")
+    for i in f:
+        listbox.insert("end",i)
+        listbox.insert("end"," ")
+    listbox.pack(side="left",fill="both",expand=True)
+    scrollbar.config(command=listbox.yview)
+
+def apagarAPP(boton5):
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'stopApp', 'src': 'GUI', 'dst': 'FMR'}))
+    boton5.configure(text="Encender APP",command=lambda:prenderAPP(boton5))
+    
+
+def apagarFMR(boton6):
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'stopFM', 'src': 'GUI', 'dst': 'FMR'}))
+    boton6.configure(text="Encender FM", command=lambda:prenderFMR(boton6))
+
+def prenderAPP(boton5):
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'execApp', 'src': 'GUI', 'dst': 'FMR'}))
+    boton5.configure(text="Apagar APP",command=lambda:apagarAPP(boton5))
+
+def prenderFMR(boton6):
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'execFM', 'src': 'GUI', 'dst': 'FMR'}))
+    boton6.configure(text="Apagar FM", command=lambda:apagarFMR(boton6))
+
 def cerrar():
-    ventana.destroy()
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'stop', 'src': 'GUI', 'dst': 'FMR'}))
 
 boton1 = tkinter.Button(ventana, image=carpetaImg, text="Crear carpeta", command= crearCarpeta)
 boton2 = tkinter.Button(ventana, image=blocImg, text="Abrir bloc", command=abrirBloc)
 boton3 = tkinter.Button(ventana, image= apagarImg, text="Apagar",command=cerrar)
+boton4 = tkinter.Button(ventana, text="Ver logs",command=logsVentana)
+boton5 = tkinter.Button(ventana, text="Apagar APP ",command=lambda:apagarAPP(boton5))
+boton6 = tkinter.Button(ventana, text="Apagar FMR",command=lambda:apagarFMR(boton6))
 
 boton1.grid(row=0,column=0,padx=10,pady=20)
 boton2.grid(row=1,column=0,padx=10,pady=20)
-boton3.grid(row=2,column=0,padx=10,pady=20)
+boton3.grid(row=5,column=0,padx=10,pady=20)
+boton4.grid(row=2,column=0,padx=10,pady=20)
+boton5.grid(row=3,column=0,padx=10,pady=20)
+boton6.grid(row=4,column=0,padx=10,pady=20)
 
 # Create a TCP/IP socket
 
@@ -183,7 +229,7 @@ def handleMessage(s, message):
         try: s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': message['src']}))
         except socket.error:
             os._exit(status=9)
-    if message['type'] == 'close':
+    if message['type'] == 'stop':
         sys.exit(9)
         os._exit(9)
 

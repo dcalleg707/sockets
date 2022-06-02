@@ -5,7 +5,7 @@ import queue
 import pickle
 import os
 import json
-from datetime import date
+import datetime
 from time import strftime
 import subprocess
 import sys
@@ -58,6 +58,7 @@ def checkKernelStatus():
         time.sleep(1)
 
 def handleMessage(s, message):
+    global die
     message = pickle.loads(message)
     print(message)
     if message['type'] == 'createFolder':
@@ -71,13 +72,15 @@ def handleMessage(s, message):
         except socket.error:
             sys.exit(9)
             os._exit(9)
-    elif message['type'] == 'close':
+    elif message['type'] == 'stop':
         sys.exit(9)
         os._exit(9)
+    elif message['type'] == 'stopFM':
+        die = True
     elif message['type'] == 'store':
         try:
-            fecha = date.today()
-            message['message']['date'] = fecha.strftime("%m/%d/%Y")
+            fecha = datetime.datetime.now()
+            message['message']['date'] = fecha.strftime("%m/%d/%Y, %H:%M:%S")
             strm = str(message['message'])
             jsonprueba = json.dumps(strm)
             entry = json.loads(jsonprueba)
