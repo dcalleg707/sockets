@@ -71,7 +71,7 @@ def handleMessage(s, message):
         except socket.error:
             sys.exit(9)
             os._exit(9)
-    elif message['type'] == 'close':
+    elif message['type'] == 'stop':
         sys.exit(9)
         os._exit(9)
     elif message['type'] == 'store':

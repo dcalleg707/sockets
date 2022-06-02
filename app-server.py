@@ -97,7 +97,7 @@ def handleMessage(s, message):
         try: s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': 'KRL'}))
         except socket.error:
             print('error')
-    elif message['type'] == 'close':
+    elif message['type'] == 'stop':
         killAllProcesses()
         sys.exit(9)
         os._exit(9)

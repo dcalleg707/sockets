@@ -142,7 +142,9 @@ def logsVentana():
     scrollbar.config(command=listbox.yview)
 
 def cerrar():
-    ventana.destroy()
+    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    kernelSocket.connect(('localhost', 10000))
+    kernelSocket.send(pickle.dumps({'type': 'stop', 'src': 'GUI', 'dst': 'FMR'}))
 
 boton1 = tkinter.Button(ventana, image=carpetaImg, text="Crear carpeta", command= crearCarpeta)
 boton2 = tkinter.Button(ventana, image=blocImg, text="Abrir bloc", command=abrirBloc)
@@ -198,7 +200,7 @@ def handleMessage(s, message):
         try: s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': message['src']}))
         except socket.error:
             os._exit(status=9)
-    if message['type'] == 'close':
+    if message['type'] == 'stop':
         sys.exit(9)
         os._exit(9)
 
