@@ -58,6 +58,7 @@ def checkKernelStatus():
         time.sleep(1)
 
 def handleMessage(s, message):
+    global die
     message = pickle.loads(message)
     print(message)
     if message['type'] == 'createFolder':
@@ -74,6 +75,8 @@ def handleMessage(s, message):
     elif message['type'] == 'stop':
         sys.exit(9)
         os._exit(9)
+    elif message['type'] == 'stopFM':
+        die = True
     elif message['type'] == 'store':
         try:
             fecha = date.today()

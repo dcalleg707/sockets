@@ -172,6 +172,48 @@ def handleMessage(s, message):
         print(appResponse)
         try: s.send(pickle.dumps(appResponse))
         except socket.error: pass
+    elif message['type'] == 'stopApp':
+        try:
+            appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            appSocket.connect(('localhost', 10001))
+            appSocket.send(pickle.dumps({'type': 'stopApp', 'src': 'KRL', 'dst': 'APP'}))
+        except socket.error:
+            print('app off')
+            appStatus = False
+    elif message['type'] == 'stopFM':
+        try:
+            registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            registerSocket.connect(('localhost', 10002))
+            registerSocket.send(pickle.dumps({'type': 'stopFM', 'src': 'KRL', 'dst': 'FMR'}))
+        except socket.error:
+            print('file manager off')
+            fileManagerStatus = False  
+    elif message['type'] == 'execApp':
+        print('Initializing app module')
+        subprocess.Popen('cmd /k ' + os.path.dirname(os.path.abspath(__file__)) + '/app-server.py')
+        time.sleep(1)
+        try:
+            response = sendToApp(message = {'type': 'check', 'src': 'KRL', 'dst': 'APP'})
+            if response['status'] == 'online':
+                appStatus = True
+        except socket.error:
+            print('app is not online')
+            appStatus = False
+            os._exit(status=9)
+        print('app module initialized')
+    elif message['type'] == 'execFM':
+        print('Initializing file manager module')
+        subprocess.Popen('cmd /k ' + os.path.dirname(os.path.abspath(__file__)) + '/register-server.py')
+        time.sleep(1)
+        try:
+            response = sendToRegister(message = {'type': 'check', 'src': 'KRL', 'dst': 'FMR'})
+            if response['status'] == 'online':
+                fileManagerStatus = True
+        except socket.error:
+            print('file manager is not online')
+            fileManagerStatus = False
+            os._exit(status=9)
+        print('file manager initialized')
     elif message['type'] == 'createFolder':
         appResponse = sendToRegister(message)
         print(appResponse)

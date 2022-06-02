@@ -65,7 +65,7 @@ def checkKernelStatus():
         time.sleep(1)
 
 def handleMessage(s, message):
-    global processes
+    global processes, die
     message = pickle.loads(message)
     print(message)
     if message['type'] != 'stop' and message['type'] != 'check':
@@ -101,6 +101,8 @@ def handleMessage(s, message):
         killAllProcesses()
         sys.exit(9)
         os._exit(9)
+    elif message['type'] == 'stopApp':
+        die = True
 
 # Listen for incoming connections
 server.listen(5)
