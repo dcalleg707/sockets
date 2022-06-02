@@ -219,7 +219,7 @@ def checkKernelStatus():
 kernelStatus = False
 
 def handleMessage(s, message):
-    global processes, appsDic
+    global processes, appsDic, boton5, boton6
     message = pickle.loads(message)
     print(message)
     if message['type'] == 'check':
@@ -237,6 +237,10 @@ def handleMessage(s, message):
             processes.remove(message['src'])
         if message['src'] in appsDic:
             appsDic.pop(message['src'])
+    if message['type'] == 'appDown':
+        boton5.configure(text="Encender APP",command=lambda:prenderAPP(boton5))
+    if message['type'] == 'fmrDown':
+        boton6.configure(text="Encender FM", command=lambda:prenderFMR(boton6))
     if message['type'] == 'stop':
         sys.exit(9)
         os._exit(9)

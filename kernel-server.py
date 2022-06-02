@@ -42,6 +42,11 @@ def checkAppStatus():
             print(localAppStatus)
             appStatus = localAppStatus
             storeMessage({'type': 'appStatus', 'status': appStatus})
+            if appStatus == False:
+                guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                guiSocket.connect(('localhost', 10003))
+                guiSocket.send(pickle.dumps({'type': 'appDown', 'src': 'KRL', 'dst': 'GUI'}))
+                guiSocket.close()
         try:
             data = sendToApp({'type': 'check', 'src': 'KRL', 'dst': 'APP'})
             if data['status'] == 'online':
@@ -61,6 +66,11 @@ def checkFileManagerStatus():
             print(localfileManagerStatus)
             fileManagerStatus = localfileManagerStatus
             storeMessage({'type': 'fileManagerStatus', 'status': fileManagerStatus})
+            if fileManagerStatus == False:
+                guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                guiSocket.connect(('localhost', 10003))
+                guiSocket.send(pickle.dumps({'type': 'fmrDown', 'src': 'KRL', 'dst': 'GUI'}))
+                guiSocket.close()
         try:
             data = sendToRegister({'type': 'check', 'src': 'KRL', 'dst': 'FMR'})
             if data['status'] == 'online':
