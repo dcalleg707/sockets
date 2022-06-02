@@ -11,6 +11,7 @@ import subprocess
 import sys
 import threading
 import time
+import random
 
 # Create a TCP/IP socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -61,6 +62,14 @@ def handleMessage(s, message):
     global die
     message = pickle.loads(message)
     print(message)
+    if message['type'] != 'stopFM' and message['type'] != 'check' and message['type'] != 'store':
+        randomNumber = random.randint(1, 4)
+        if randomNumber == 4:
+            s.send(pickle.dumps({'type': 'check', 'status': 'error', 'src': 'APP', 'dst': 'KRL', 'error': 'error'}))
+            return
+        elif randomNumber > 1:
+            s.send(pickle.dumps({'type': 'check', 'status': 'pending' ,'src': 'APP', 'dst': 'KRL'}))
+            time.sleep(randomNumber)
     if message['type'] == 'createFolder':
         try:
             os.mkdir(os.path.dirname(os.path.abspath(__file__)) +'/folders/' + message['name'])
@@ -76,7 +85,9 @@ def handleMessage(s, message):
         sys.exit(9)
         os._exit(9)
     elif message['type'] == 'stopFM':
-        die = True
+        s.send(pickle.dumps({'type': 'stopFM', 'status': 'success', 'src': 'FMR', 'dst': 'KRL'}))
+        sys.exit(9)
+        os._exit(9)
     elif message['type'] == 'store':
         try:
             fecha = datetime.datetime.now()

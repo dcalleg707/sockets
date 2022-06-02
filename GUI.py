@@ -19,6 +19,7 @@ ventana.geometry("1280x720")
 bg = tkinter.PhotoImage(file="{}/img/Wallpaper.png".format(os.path.dirname(os.path.abspath(__file__))))
 fondo = tkinter.Label(ventana,image=bg)
 fondo.place(x=0,y=0)
+appsDic = {}
 
 
 
@@ -35,13 +36,10 @@ appAbierta = False
 pidApp = 0
 
 def cerrarApp(botonApp,pidApp):
-    global appAbierta, row, column
-    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    kernelSocket.connect(('localhost', 10000))
-    kernelSocket.send(pickle.dumps({'type': 'kill', 'pid':pidApp, 'src': 'GUI', 'dst': 'APP'}))
-    response = pickle.loads(kernelSocket.recv(1024))
-    kernelSocket.close()
+    global appAbierta, row, column, appsDic
+    response = sendToKernel({'type': 'kill', 'pid':pidApp, 'src': 'GUI', 'dst': 'APP'})
     if response['status'] == 'success':
+        del appsDic[pidApp]
         appAbierta=False
         botonApp.destroy()
         if row > 0:
@@ -72,7 +70,9 @@ def crearCarpeta():
 
 def crearIconoBloc(pidApp):
     global row,column
+    global appsDic
     blocNuevo = tkinter.Button(ventana,text="Cerrar bloc de notas "+str(pidApp), command=lambda:cerrarApp(blocNuevo,pidApp))
+    appsDic[pidApp] = blocNuevo
     blocNuevo.grid(row=row,column=column,padx=10,pady=10)
     row = row+1
     if row == 7:
@@ -142,17 +142,14 @@ def logsVentana():
     scrollbar.config(command=listbox.yview)
 
 def apagarAPP(boton5):
-    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    kernelSocket.connect(('localhost', 10000))
-    kernelSocket.send(pickle.dumps({'type': 'stopApp', 'src': 'GUI', 'dst': 'FMR'}))
-    boton5.configure(text="Encender APP",command=lambda:prenderAPP(boton5))
+    kernelResponse = sendToKernel({'type': 'stopApp', 'src': 'GUI', 'dst': 'FMR'})
+    if kernelResponse['status'] == 'success':
+        boton5.configure(text="Encender APP",command=lambda:prenderAPP(boton5))
     
-
 def apagarFMR(boton6):
-    kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    kernelSocket.connect(('localhost', 10000))
-    kernelSocket.send(pickle.dumps({'type': 'stopFM', 'src': 'GUI', 'dst': 'FMR'}))
-    boton6.configure(text="Encender FM", command=lambda:prenderFMR(boton6))
+    kernelResponse = sendToKernel({'type': 'stopFM', 'src': 'GUI', 'dst': 'FMR'})
+    if kernelResponse['status'] == 'success':
+        boton6.configure(text="Encender FM", command=lambda:prenderFMR(boton6))
 
 def prenderAPP(boton5):
     kernelSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -222,13 +219,24 @@ def checkKernelStatus():
 kernelStatus = False
 
 def handleMessage(s, message):
-    global processes
+    global processes, appsDic
     message = pickle.loads(message)
     print(message)
     if message['type'] == 'check':
         try: s.send(pickle.dumps({'type': 'check', 'status': 'online', 'src': 'GUI', 'dst': message['src']}))
         except socket.error:
             os._exit(status=9)
+    if message['type'] == 'death':
+        try:
+            appsDic[message['pid']].destroy()
+            del appsDic[message['pid']]
+            s.send(pickle.dumps({'type': 'death', 'status': 'success', 'src': 'GUI', 'dst': 'KRL'}))
+        except socket.error:
+            s.send(pickle.dumps({'type': 'death', 'status': 'error', 'src': 'GUI', 'dst': 'KRL'}))
+        if message['src'] in processes:
+            processes.remove(message['src'])
+        if message['src'] in appsDic:
+            appsDic.pop(message['src'])
     if message['type'] == 'stop':
         sys.exit(9)
         os._exit(9)

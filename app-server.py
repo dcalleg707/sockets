@@ -29,6 +29,7 @@ def killAllProcesses():
     for process in processes:
         try:
             os.kill(process, signal.SIGTERM)
+            sendToKernel({'type': 'death', 'pid': process,'src': 'FMR', 'dst': 'GUI'})
         except:
             pass
     processes = []
@@ -68,7 +69,7 @@ def handleMessage(s, message):
     global processes, die
     message = pickle.loads(message)
     print(message)
-    if message['type'] != 'stop' and message['type'] != 'check':
+    if message['type'] != 'stopApp' and message['type'] != 'check':
         randomNumber = random.randint(1, 4)
         if randomNumber == 4:
             s.send(pickle.dumps({'type': 'check', 'status': 'error', 'src': 'APP', 'dst': 'KRL', 'error': 'error'}))
@@ -102,6 +103,9 @@ def handleMessage(s, message):
         sys.exit(9)
         os._exit(9)
     elif message['type'] == 'stopApp':
+        s.send(pickle.dumps({'type': 'stopApp', 'status': 'success', 'src': 'GUI', 'dst': 'KRL'}))
+        sys.exit(9)
+        os._exit(9)
         die = True
 
 # Listen for incoming connections

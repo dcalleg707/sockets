@@ -27,7 +27,7 @@ def killAllProcesses():
     for process in processes:
         try:
             os.kill(process, signal.SIGTERM)
-            #sendToGui({'type': 'kill', 'pid': process,'src': 'KRL', 'dst': 'GUI'})
+            sendToGui({'type': 'death', 'pid': process,'src': 'KRL', 'dst': 'GUI'})
         except:
             pass
     processes = []
@@ -176,17 +176,15 @@ def handleMessage(s, message):
         except socket.error: pass
     elif message['type'] == 'stopApp':
         try:
-            appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            appSocket.connect(('localhost', 10001))
-            appSocket.send(pickle.dumps({'type': 'stopApp', 'src': 'KRL', 'dst': 'APP'}))
+            appResponse = sendToApp({'type': 'stopApp', 'src': 'KRL', 'dst': 'APP'})
+            s.send(pickle.dumps(appResponse))
         except socket.error:
             print('app off')
             appStatus = False
     elif message['type'] == 'stopFM':
         try:
-            registerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            registerSocket.connect(('localhost', 10002))
-            registerSocket.send(pickle.dumps({'type': 'stopFM', 'src': 'KRL', 'dst': 'FMR'}))
+            registerResponse = sendToRegister({'type': 'stopFM', 'src': 'KRL', 'dst': 'FMR'})
+            s.send(pickle.dumps(registerResponse))
         except socket.error:
             print('file manager off')
             fileManagerStatus = False  
@@ -218,12 +216,10 @@ def handleMessage(s, message):
         print('file manager initialized')
     elif message['type'] == 'createFolder':
         appResponse = sendToRegister(message)
-        print(appResponse)
         try: s.send(pickle.dumps(appResponse))
         except socket.error: pass
     elif message['type'] == 'deleteFolder':
         appResponse = sendToRegister(message)
-        print(appResponse)
         try: s.send(pickle.dumps(appResponse))
         except socket.error: pass
     elif message['type'] == 'check':
@@ -231,6 +227,9 @@ def handleMessage(s, message):
         storeMessage(answer)
         try: s.send(pickle.dumps(answer))
         except socket.error: pass
+    elif message['type'] == 'death':
+        GUIresponse = sendToGui(message)
+        s.send(pickle.dumps(response))
     elif message['type'] == 'stop':
         try:
             appSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
