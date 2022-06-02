@@ -42,11 +42,13 @@ def checkAppStatus():
             print(localAppStatus)
             appStatus = localAppStatus
             storeMessage({'type': 'appStatus', 'status': appStatus})
+            guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            guiSocket.connect(('localhost', 10003))
             if appStatus == False:
-                guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                guiSocket.connect(('localhost', 10003))
                 guiSocket.send(pickle.dumps({'type': 'appDown', 'src': 'KRL', 'dst': 'GUI'}))
-                guiSocket.close()
+            else:
+                guiSocket.send(pickle.dumps({'type': 'appUp', 'src': 'KRL', 'dst': 'GUI'}))
+            guiSocket.close()
         try:
             data = sendToApp({'type': 'check', 'src': 'KRL', 'dst': 'APP'})
             if data['status'] == 'online':
@@ -56,7 +58,7 @@ def checkAppStatus():
                 localAppStatus = False
         except socket.error:
             print('app off')
-        time.sleep(3)
+        time.sleep(1)
 
 def checkFileManagerStatus():
     global fileManagerStatus
@@ -66,11 +68,13 @@ def checkFileManagerStatus():
             print(localfileManagerStatus)
             fileManagerStatus = localfileManagerStatus
             storeMessage({'type': 'fileManagerStatus', 'status': fileManagerStatus})
+            guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            guiSocket.connect(('localhost', 10003))
             if fileManagerStatus == False:
-                guiSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                guiSocket.connect(('localhost', 10003))
                 guiSocket.send(pickle.dumps({'type': 'fmrDown', 'src': 'KRL', 'dst': 'GUI'}))
-                guiSocket.close()
+            else: 
+                guiSocket.send(pickle.dumps({'type': 'fmrUp', 'src': 'KRL', 'dst': 'GUI'}))
+            guiSocket.close()
         try:
             data = sendToRegister({'type': 'check', 'src': 'KRL', 'dst': 'FMR'})
             if data['status'] == 'online':
@@ -78,7 +82,7 @@ def checkFileManagerStatus():
         except socket.error:
             localfileManagerStatus = False 
             print('file manager off')
-        time.sleep(5)
+        time.sleep(1)
 
 def checkGuiStatus():
     global guiStatus

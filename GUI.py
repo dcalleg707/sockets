@@ -241,6 +241,10 @@ def handleMessage(s, message):
         boton5.configure(text="Encender APP",command=lambda:prenderAPP(boton5))
     if message['type'] == 'fmrDown':
         boton6.configure(text="Encender FM", command=lambda:prenderFMR(boton6))
+    if message['type'] == 'appUp':
+        boton5.configure(text="Apagar APP",command=lambda:apagarAPP(boton5))
+    if message['type'] == 'fmrUp':
+        boton6.configure(text="Apagar FM", command=lambda:apagarFMR(boton6))
     if message['type'] == 'stop':
         sys.exit(9)
         os._exit(9)
