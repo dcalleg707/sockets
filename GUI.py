@@ -27,7 +27,7 @@ carpetaImg = tkinter.PhotoImage(file="{}/img/carpeta.png".format(os.path.dirname
 blocImg = tkinter.PhotoImage(file="{}/img/bloc.png".format(os.path.dirname(os.path.abspath(__file__))))
 apagarImg = tkinter.PhotoImage(file="{}/img/shutdown.png".format(os.path.dirname(os.path.abspath(__file__))))
 
-row = 4
+row = 6
 rowAux = 0
 column = 0
 nombreCarpeta = tkinter.Entry(ventana)
